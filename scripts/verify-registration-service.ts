@@ -6,6 +6,7 @@ import { Pool } from "pg";
 import * as schema from "../src/db/schema";
 import {
   brands,
+  contactConsents,
   contacts,
   registrationEvents,
   registrations,
@@ -20,6 +21,11 @@ const brandCode = `test-${suffix}`;
 const firstEventSlug = `imss-${suffix}`;
 const secondEventSlug = `nif-${suffix}`;
 const closedEventSlug = `closed-${suffix}`;
+const consent = {
+  privacyNoticeVersion: "test-1",
+  marketing: false,
+  evidence: "integration-test",
+};
 
 async function main() {
   const databaseUrl = process.env.DATABASE_URL;
@@ -81,6 +87,7 @@ async function main() {
         name: "Alumna de prueba",
         email: "  alumna+prueba@ejemplo.test  ",
       },
+      consent,
       attribution: {
         utmSource: "integration-test",
       },
@@ -95,6 +102,7 @@ async function main() {
         name: "Nombre diferente que no debe sobrescribir",
         email: "ALUMNA+PRUEBA@EJEMPLO.TEST",
       },
+      consent,
     });
 
     assert.equal(duplicate.isNewRegistration, false);
@@ -109,6 +117,7 @@ async function main() {
           name: "Alumna de prueba",
           email: "alumna+prueba@ejemplo.test",
         },
+        consent,
       }),
       createRegistration(database, {
         brandCode,
@@ -117,6 +126,7 @@ async function main() {
           name: "Alumna de prueba",
           email: "alumna+prueba@ejemplo.test",
         },
+        consent,
       }),
     ]);
 
@@ -137,6 +147,7 @@ async function main() {
             name: "Alumna de prueba",
             email: "alumna+prueba@ejemplo.test",
           },
+          consent,
         }),
       (error: unknown) =>
         error instanceof RegistrationServiceError &&
@@ -155,10 +166,20 @@ async function main() {
 
     assert.equal(registrationRows.length, 2);
 
+    const consentRows = await database
+      .select({ id: contactConsents.id })
+      .from(contactConsents)
+      .where(eq(contactConsents.brandId, brandId));
+
+    assert.equal(consentRows.length, 4);
+
     console.log("Registration integration verification passed.");
   } finally {
     try {
       if (brandId) {
+        await database
+          .delete(contactConsents)
+          .where(eq(contactConsents.brandId, brandId));
         await database
           .delete(registrations)
           .where(eq(registrations.brandId, brandId));
@@ -167,9 +188,7 @@ async function main() {
           .delete(registrationEvents)
           .where(eq(registrationEvents.brandId, brandId));
 
-        await database
-          .delete(contacts)
-          .where(eq(contacts.brandId, brandId));
+        await database.delete(contacts).where(eq(contacts.brandId, brandId));
 
         await database.delete(brands).where(eq(brands.id, brandId));
       }

@@ -1,10 +1,12 @@
 import { and, eq } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
-import type * as schema from "@/db/schema";import {
+import type * as schema from "@/db/schema";
+import {
   brands,
   contacts,
   registrationEvents,
   registrations,
+  contactConsents,
 } from "@/db/schema";
 import { normalizeEmail } from "@/modules/contacts/normalize-email";
 
@@ -22,6 +24,12 @@ export type RegistrationAttribution = {
   landingUrl?: string;
 };
 
+export type RegistrationConsentInput = {
+  privacyNoticeVersion: string;
+  marketing: boolean;
+  evidence: string;
+};
+
 export type CreateRegistrationInput = {
   brandCode: string;
   eventSlug: string;
@@ -30,6 +38,7 @@ export type CreateRegistrationInput = {
     email: string;
     phoneE164?: string;
   };
+  consent: RegistrationConsentInput;
   attribution?: RegistrationAttribution;
 };
 
@@ -172,6 +181,29 @@ export async function createRegistration(
         "No fue posible resolver la inscripción.",
       );
     }
+
+    if (createdRegistration) {
+  await transaction.insert(contactConsents).values([
+    {
+      brandId: event.brandId,
+      contactId,
+      registrationId,
+      purpose: "class_registration",
+      granted: true,
+      privacyNoticeVersion: input.consent.privacyNoticeVersion,
+      evidence: input.consent.evidence,
+    },
+    {
+      brandId: event.brandId,
+      contactId,
+      registrationId,
+      purpose: "marketing",
+      granted: input.consent.marketing,
+      privacyNoticeVersion: input.consent.privacyNoticeVersion,
+      evidence: input.consent.evidence,
+    },
+  ]);
+}
 
     return {
       contactId,
