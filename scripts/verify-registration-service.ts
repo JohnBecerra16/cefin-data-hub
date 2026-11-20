@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
-import { getDatabase } from "../src/db";
+import { drizzle } from "drizzle-orm/node-postgres";
+import { Pool } from "pg";
+import * as schema from "../src/db/schema";
 import {
   brands,
   contacts,
@@ -20,7 +22,18 @@ const secondEventSlug = `nif-${suffix}`;
 const closedEventSlug = `closed-${suffix}`;
 
 async function main() {
-  const database = getDatabase();
+  const databaseUrl = process.env.DATABASE_URL;
+
+  if (!databaseUrl) {
+    throw new Error("DATABASE_URL no está configurada.");
+  }
+
+  const pool = new Pool({
+    connectionString: databaseUrl,
+    max: 1,
+  });
+
+  const database = drizzle(pool, { schema });
   let brandId: string | undefined;
 
   try {
@@ -61,7 +74,7 @@ async function main() {
       },
     ]);
 
-    const first = await createRegistration({
+    const first = await createRegistration(database, {
       brandCode,
       eventSlug: firstEventSlug,
       contact: {
@@ -75,7 +88,7 @@ async function main() {
 
     assert.equal(first.isNewRegistration, true);
 
-    const duplicate = await createRegistration({
+    const duplicate = await createRegistration(database, {
       brandCode,
       eventSlug: firstEventSlug,
       contact: {
@@ -89,7 +102,7 @@ async function main() {
     assert.equal(duplicate.registrationId, first.registrationId);
 
     const concurrent = await Promise.all([
-      createRegistration({
+      createRegistration(database, {
         brandCode,
         eventSlug: secondEventSlug,
         contact: {
@@ -97,7 +110,7 @@ async function main() {
           email: "alumna+prueba@ejemplo.test",
         },
       }),
-      createRegistration({
+      createRegistration(database, {
         brandCode,
         eventSlug: secondEventSlug,
         contact: {
@@ -117,7 +130,7 @@ async function main() {
 
     await assert.rejects(
       () =>
-        createRegistration({
+        createRegistration(database, {
           brandCode,
           eventSlug: closedEventSlug,
           contact: {
@@ -144,18 +157,24 @@ async function main() {
 
     console.log("Registration integration verification passed.");
   } finally {
-    if (brandId) {
-      await database
-        .delete(registrations)
-        .where(eq(registrations.brandId, brandId));
+    try {
+      if (brandId) {
+        await database
+          .delete(registrations)
+          .where(eq(registrations.brandId, brandId));
 
-      await database
-        .delete(registrationEvents)
-        .where(eq(registrationEvents.brandId, brandId));
+        await database
+          .delete(registrationEvents)
+          .where(eq(registrationEvents.brandId, brandId));
 
-      await database.delete(contacts).where(eq(contacts.brandId, brandId));
+        await database
+          .delete(contacts)
+          .where(eq(contacts.brandId, brandId));
 
-      await database.delete(brands).where(eq(brands.id, brandId));
+        await database.delete(brands).where(eq(brands.id, brandId));
+      }
+    } finally {
+      await pool.end();
     }
   }
 }

@@ -1,12 +1,14 @@
 import { and, eq } from "drizzle-orm";
-import { getDatabase } from "@/db";
-import {
+import type { NodePgDatabase } from "drizzle-orm/node-postgres";
+import type * as schema from "@/db/schema";import {
   brands,
   contacts,
   registrationEvents,
   registrations,
 } from "@/db/schema";
 import { normalizeEmail } from "@/modules/contacts/normalize-email";
+
+type RegistrationDatabase = NodePgDatabase<typeof schema>;
 
 export type RegistrationAttribution = {
   source?: string;
@@ -53,9 +55,9 @@ export class RegistrationServiceError extends Error {
 }
 
 export async function createRegistration(
+  database: RegistrationDatabase,
   input: CreateRegistrationInput,
 ): Promise<CreateRegistrationResult> {
-  const database = getDatabase();
   const emailNormalized = normalizeEmail(input.contact.email);
   const emailOriginal = input.contact.email.trim();
 
