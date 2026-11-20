@@ -14,7 +14,8 @@
     "test": "tsx --test tests/*.test.ts",
     "check:env": "node --env-file-if-exists=.env.local --import tsx scripts/check-env.ts",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "test:registration-integration": "node --env-file-if-exists=.env.local --import tsx scripts/verify-registration-service.ts"
   },
   "dependencies": {
     "drizzle-orm": "0.45.4",
