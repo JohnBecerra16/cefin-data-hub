@@ -503,6 +503,10 @@
         "registration_attempts_result_check": {
           "name": "registration_attempts_result_check",
           "value": "\"registration_attempts\".\"result\" in ('accepted', 'rejected', 'failed', 'rate_limited')"
+        },
+        "registration_attempts_event_requires_brand": {
+          "name": "registration_attempts_event_requires_brand",
+          "value": "\"registration_attempts\".\"event_id\" is null or \"registration_attempts\".\"brand_id\" is not null"
         }
       },
       "isRLSEnabled": false
@@ -650,9 +654,9 @@
           "name": "registration_events_slug_format",
           "value": "\"registration_events\".\"slug\" ~ '^[a-z0-9][a-z0-9-]{0,99}$'"
         },
-        "registration_events_whatsapp_https": {
-          "name": "registration_events_whatsapp_https",
-          "value": "\"registration_events\".\"whatsapp_url\" is null or \"registration_events\".\"whatsapp_url\" ~ '^https://(chat\\.)?whatsapp\\.com/'"
+        "registration_events_whatsapp_invite": {
+          "name": "registration_events_whatsapp_invite",
+          "value": "\"registration_events\".\"whatsapp_url\" is null or \"registration_events\".\"whatsapp_url\" ~ '^https://chat\\.whatsapp\\.com/[A-Za-z0-9_-]+/?$'"
         }
       },
       "isRLSEnabled": false

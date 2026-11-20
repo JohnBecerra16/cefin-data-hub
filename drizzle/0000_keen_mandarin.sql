@@ -1,3 +1,5 @@
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+--> statement-breakpoint
 CREATE TABLE "brands" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"code" varchar(50) NOT NULL,
@@ -52,7 +54,8 @@ CREATE TABLE "registration_attempts" (
 	"result" varchar(16) NOT NULL,
 	"error_code" varchar(60),
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "registration_attempts_result_check" CHECK ("registration_attempts"."result" in ('accepted', 'rejected', 'failed', 'rate_limited'))
+	CONSTRAINT "registration_attempts_result_check" CHECK ("registration_attempts"."result" in ('accepted', 'rejected', 'failed', 'rate_limited')),
+	CONSTRAINT "registration_attempts_event_requires_brand" CHECK ("registration_attempts"."event_id" is null or "registration_attempts"."brand_id" is not null)
 );
 --> statement-breakpoint
 CREATE TABLE "registration_events" (
@@ -68,7 +71,7 @@ CREATE TABLE "registration_events" (
 	CONSTRAINT "registration_events_brand_id_id_unique" UNIQUE("brand_id","id"),
 	CONSTRAINT "registration_events_status_check" CHECK ("registration_events"."status" in ('draft', 'active', 'closed')),
 	CONSTRAINT "registration_events_slug_format" CHECK ("registration_events"."slug" ~ '^[a-z0-9][a-z0-9-]{0,99}$'),
-	CONSTRAINT "registration_events_whatsapp_https" CHECK ("registration_events"."whatsapp_url" is null or "registration_events"."whatsapp_url" ~ '^https://(chat\.)?whatsapp\.com/')
+	CONSTRAINT "registration_events_whatsapp_invite" CHECK ("registration_events"."whatsapp_url" is null or "registration_events"."whatsapp_url" ~ '^https://chat\.whatsapp\.com/[A-Za-z0-9_-]+/?$')
 );
 --> statement-breakpoint
 CREATE TABLE "registration_requests" (
