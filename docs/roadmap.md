@@ -7,7 +7,7 @@ Directorio vacío inspeccionado. Diagnóstico y modelo propuestos. Flujo landing
 ## Fase 1 — Captación V0.1
 
 1. Aplicación base, configuración y verificaciones locales: completada localmente el 13 de noviembre de 2026. Lint sin advertencias, comprobación de tipos, 5 pruebas de configuración y build de producción correctos. Prueba HTTP local: 200, idioma es-MX y cabeceras configuradas. Instalación final: auditoría con 0 vulnerabilidades reportadas. No se ha desplegado ni probado PostgreSQL.
-2. Drizzle, esquema y migraciones PostgreSQL: migración inicial revisada y corregida localmente; conexión segura de la futura API mediante red privada de Railway y aplicación a PostgreSQL pendientes de aprobación.
+2. Drizzle, esquema y migraciones PostgreSQL: completada en development el 20 de noviembre de 2026. La migración inicial se revisó, se aplicó correctamente mediante el pre-despliegue de `data-hub-api` y las tablas quedaron verificadas. La API usará la red privada de Railway; el acceso público directo de PostgreSQL fue retirado.
 3. Servicio transaccional de registro y deduplicación: pendiente.
 4. API, idempotencia, CORS, CAPTCHA y límites: pendiente.
 5. Confirmación y medición sin duplicados por recarga: pendiente.
